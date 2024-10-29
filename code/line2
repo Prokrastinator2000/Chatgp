@@ -1,0 +1,93 @@
+using UnityEngine;
+using System.Collections.Generic;
+
+public class ShapeDrawer : MonoBehaviour
+{
+    public GameObject linePrefab; // Префаб для визуализации линии
+    private LineRenderer currentLine;
+    private List<Vector2> points = new List<Vector2>();
+    private bool isDrawing = false;
+    private Transform player;
+
+    void Start()
+    {
+        player = GameObject.FindGameObjectWithTag("Player").transform;
+    }
+
+    void Update()
+    {
+        if (Input.GetMouseButtonDown(0) && IsPlayerOnGround())
+        {
+            StartDrawing();
+        }
+
+        if (Input.GetMouseButton(0) && isDrawing)
+        {
+            UpdateLine();
+        }
+
+        if (Input.GetMouseButtonUp(0) && isDrawing)
+        {
+            StopDrawing();
+        }
+    }
+
+    private bool IsPlayerOnGround()
+    {
+        // Ваша логика проверки, стоит ли персонаж на земле
+        return true; // Замените на реальную проверку
+    }
+
+    private void StartDrawing()
+    {
+        isDrawing = true;
+        points.Clear();
+        currentLine = Instantiate(linePrefab).GetComponent<LineRenderer>();
+        points.Add(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+        UpdateLineRenderer();
+    }
+
+    private void UpdateLine()
+    {
+        Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        if (points.Count == 0 || (Vector2.Distance(mousePos, points[points.Count - 1]) > 0.1f))
+        {
+            points.Add(mousePos);
+            UpdateLineRenderer();
+        }
+    }
+
+    private void UpdateLineRenderer()
+    {
+        currentLine.positionCount = points.Count;
+        for (int i = 0; i < points.Count; i++)
+        {
+            currentLine.SetPosition(i, points[i]);
+        }
+    }
+
+    private void StopDrawing()
+    {
+        isDrawing = false;
+        CreatePhysicsShape();
+    }
+
+    private void CreatePhysicsShape()
+    {
+        GameObject shape = new GameObject("Shape");
+        PolygonCollider2D collider = shape.AddComponent<PolygonCollider2D>();
+
+        Vector2[] colliderPoints = new Vector2[points.Count];
+        for (int i = 0; i < points.Count; i++)
+        {
+            colliderPoints[i] = points[i];
+        }
+
+        collider.points = colliderPoints;
+
+        Rigidbody2D rb = shape.AddComponent<Rigidbody2D>();
+        rb.isKinematic = true; // Замените на false, если хотите, чтобы объект поддавался физике
+
+        // Вы можете добавить визуализацию, например, LineRenderer, чтобы отобразить фигуру
+    }
+}
